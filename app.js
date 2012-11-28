@@ -1,11 +1,11 @@
 #! /usr/bin/node
 
+require('colors');
 var fs = require('fs');
 var sys = require('sys');
 var exec = require('child_process').exec;
 var async = require('async');
 var Table = require('cli-table');
-require('colors');
 
 //listing current directory files
 var pwd = process.env.PWD + '/';
