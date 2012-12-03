@@ -42,17 +42,17 @@ var git = {
 
 
 var table = new Table({
-	head: ['Clean', 'Repository', 'branch', 'Last commit by']
+	head: ['Clean', 'Repository', 'Branch', 'Last commit by']
 });
 
 var fileList = fs.readdirSync('.');
 // filtering directories
 fileList = fileList.filter(isDirectory);
 
-async.mapSeries(fileList, extractGitData, function(err, data){
-	data.forEach(function(entry){
-		if (entry.success) {
-			table.push(entry.data);
+async.map(fileList, extractGitData, function(err, gitInfos){
+	gitInfos.forEach(function(repoInfo){
+		if (repoInfo) {
+			table.push(format(repoInfo));
 		}
 	});
 
@@ -63,43 +63,70 @@ async.mapSeries(fileList, extractGitData, function(err, data){
 	}
 });
 
+function format(repoInfo){
+	var commitInfo = repoInfo.lastCommitInfo;
+	var branch     = repoInfo.currentBranch;
+
+	var cleanCell  = repoInfo.isClean ? '  Y  '.green : '  N  '.red;
+	var nameCell   = repoInfo.dirName;
+	var branchCell = branch == 'master' ? branch : branch.blue;
+	var mailCell   = 'no commit?'.red;
+
+	if (commitInfo){
+		var author = commitInfo.authorMail;
+		mailCell = commitInfo.configuredMail == author ? author.green : author;
+	}
+
+	return [
+		cleanCell,
+		nameCell,
+		branchCell,
+		mailCell
+	];
+}
 
 function isDirectory(dirName){
 	return fs.statSync(dirName).isDirectory();
 }
 
 function extractGitData(dirName, callback){
-	isGitRepository(dirName, function(isGit){
+	isGitRepository(dirName, function(error, isGit){
 		if (isGit){
+			var gitInfo = {
+				dirName : dirName
+			};
 			async.parallel([
-				function(callback){
-					isCleanRepository(dirName, callback);
+				function(done){
+					isCleanRepository(dirName, function(error, isClean){
+						gitInfo.isClean = isClean;
+						done();
+					});
 				},
-				function(callback){
-					// Adding folder name to the output table here.
-					// That way, we can change it to whatever we want later (git project name, ...)
-					callback(null, dirName);
+				function(done){
+					getCurrentBranch(dirName, function(error, branch){
+						gitInfo.currentBranch = branch;
+						done();
+					});
 				},
-				function(callback){
-					resolveCurrentBranch(dirName, callback);
-				},
-				function(callback){
-					lastCommitUser(dirName, callback);
+				function(done){
+					getLastCommitInfo(dirName, function(error, commitInfo){
+						gitInfo.lastCommitInfo = commitInfo;
+						done();
+					});
 				}
 			],
-			function(err, results){
-				var result = {success:true, data:results};
-				callback(null, result);
+			function(err){
+				callback(err, gitInfo);
 			});
 		} else {
-			callback(null, {success:false});
+			callback(null, null);
 		}
 	});
 }
 
 function isGitRepository(dirName, callback){
 	git.status(dirName, function(error){
-		callback(!error);
+		callback(error, !error);
 	});
 }
 
@@ -108,29 +135,24 @@ function isCleanRepository(dirName, callback){
 		var nbLines = status.split('\n').length;
 		// 2 lines == branch info + new line
 		// more lines == previous + changed/untracked files
-		callback( error, nbLines == 2 ? '  Y  '.green : '  N  '.red);
+		callback( error, nbLines == 2);
 	});
 }
-function resolveCurrentBranch(dirName, callback){
-	git.getCurrentBranch(dirName, function(error, branch){
-		if (branch != 'master'){
-			branch = branch.blue;
-		}
-		callback( error, branch );
-	});
+function getCurrentBranch(dirName, callback){
+	git.getCurrentBranch(dirName, callback);
 }
-function lastCommitUser(dirName, callback){
+function getLastCommitInfo(dirName, callback){
 	git.run(dirName, 'log -n 1', function(error, stdout, stderr){
 		if (error) {
-			callback(error, 'no commit?'.red);
+			callback(error, null);
 		} else {
-			git.getConfiguredEmail(dirName, function(error, userMail){
+			git.getConfiguredEmail(dirName, function(error, configuredMail){
 				var secondLine = stdout.split('\n').length > 1 ? stdout.split('\n')[1] : '';
 				var authorMail = secondLine.split('<').length > 1 ? stdout.split('<')[1].split('>')[0].trim() : '';
-				if (userMail == authorMail) {
-					authorMail = authorMail.green;
-				}
-				callback( null, authorMail );
+				callback( null, {
+					authorMail     : authorMail,
+					configuredMail : configuredMail
+				});
 			});
 		}
 	});
