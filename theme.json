@@ -1,0 +1,7 @@
+{
+	"error"     : "red",
+	"mine"      : "green",
+	"positive"  : "green",
+	"negative"  : "red",
+	"highlight" : "blue"
+}

@@ -1,16 +1,21 @@
 #!/usr/bin/node
 
-require('colors');
-var fs = require('fs');
-var async = require('async');
-var Table = require('cli-table');
+var colors  = require('colors');
+var fs      = require('fs');
+var async   = require('async');
+var Table   = require('cli-table');
 var options = require('commander');
-var git = require('./git');
+
+var git     = require('./git');
+var theme   = require('./theme.json');
 
 options
   .version('0.0.1')
   .option('-i, --ignore-clean', 'Ignore clean repositories')
+  .option('-c, --no-color',     'Do not color the output')
   .parse(process.argv);
+
+colors.setTheme(theme);
 
 var table = new Table({
 	head: ['Clean', 'Repository', 'Branch', 'Last commit by']
@@ -31,7 +36,11 @@ async.map(dirList, extractGitData, function(err, gitInfos){
 	if ( ! table.length){
 		console.error('No git repository found as child of current folder.');
 	} else {
-		console.log(table.toString());
+		var output = table.toString();
+		if( ! options.color){
+			output = output.stripColors;
+		}
+		console.log(output);
 	}
 });
 
@@ -39,14 +48,14 @@ function format(repoInfo){
 	var commitInfo = repoInfo.lastCommitInfo;
 	var branch     = repoInfo.currentBranch;
 
-	var cleanCell  = repoInfo.isClean ? '  Y  '.green : '  N  '.red;
+	var cleanCell  = repoInfo.isClean ? '  Y  '.positive : '  N  '.negative;
 	var nameCell   = repoInfo.dirName;
-	var branchCell = branch == 'master' ? branch : branch.blue;
-	var mailCell   = 'no commit?'.red;
+	var branchCell = branch == 'master' ? branch : branch.highlight;
+	var mailCell   = 'no commit?'.error;
 
 	if (commitInfo){
 		var author = commitInfo.authorMail;
-		mailCell = commitInfo.configuredMail == author ? author.green : author;
+		mailCell = commitInfo.configuredMail == author ? author.mine : author;
 	}
 
 	return [
