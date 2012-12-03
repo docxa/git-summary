@@ -24,7 +24,7 @@ async.mapSeries(fileList, extractGitData, function(err, data){
 			table.push(entry.data);
 		}
 	});
-	
+
 	if ( ! table.length){
 		console.error('No git repository found as child of current folder.');
 	} else {
@@ -34,13 +34,12 @@ async.mapSeries(fileList, extractGitData, function(err, data){
 
 
 function isDirectory(dirName){
-	return dir = fs.statSync(dirName).isDirectory();
+	return fs.statSync(dirName).isDirectory();
 }
 
 function extractGitData(dirName, callback){
 	isGitRepository(dirName, function(isGit){
 		if (isGit){
-			var currentbranch = '';
 			async.parallel([
 				function(callback){
 					isCleanRepository(dirName, callback);
@@ -70,14 +69,14 @@ function extractGitData(dirName, callback){
 function isGitRepository(dirName, callback){
 	exec('cd ' + pwd + dirName + ' && git status -sb ', function(error, stdout, stderr){
 		callback( !error );
-	});	
+	});
 }
 
 function isCleanRepository(dirName, callback){
 	exec('cd ' + pwd + dirName + ' && git status -s', function(error, stdout, stderr){
-		
+
 		callback( error, stdout.length == 0 ? '  Y  '.green : '  N  '.red);
-	});	
+	});
 }
 function resolveCurrentBranch(dirName, callback){
 	exec('cd ' + pwd + dirName + ' && git status -sb', function(error, stdout, stderr){
@@ -90,7 +89,7 @@ function resolveCurrentBranch(dirName, callback){
 			}
 			callback( null, currentBranch );
 		}
-	});	
+	});
 }
 function lastCommitUser(dirName, callback){
 	exec('cd ' + pwd + dirName + ' && git log -n 1', function(error, stdout, stderr){
