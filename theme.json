@@ -3,5 +3,6 @@
 	"mine"      : "green",
 	"positive"  : "green",
 	"negative"  : "red",
-	"highlight" : "blue"
+	"highlight" : "blue",
+	"header"    : "cyan"
 }

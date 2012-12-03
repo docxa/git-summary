@@ -12,13 +12,20 @@ var theme   = require('./theme.json');
 options
   .version('0.0.1')
   .option('-i, --ignore-clean', 'Ignore clean repositories')
-  .option('-c, --no-color',     'Do not color the output')
+  .option('-C, --no-color',     'Do not color the output')
+  .option('-c, --compact',      'Compact table')
   .parse(process.argv);
 
 colors.setTheme(theme);
 
 var table = new Table({
-	head: ['Clean', 'Repository', 'Branch', 'Last commit by']
+	head: ['Clean', 'Repository', 'Branch', 'Last commit by'],
+	style: {
+		'padding-left'  : 1,
+		'padding-right' : 1,
+		head 			: options.color ? [theme.header] : undefined,
+		compact 		: options.compact
+	}
 });
 
 var dirList = fs.readdirSync('.').filter(isDirectory);
