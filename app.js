@@ -4,21 +4,26 @@ require('colors');
 var fs = require('fs');
 var async = require('async');
 var Table = require('cli-table');
+var options = require('commander');
 var git = require('./git');
 
-
+options
+  .version('0.0.1')
+  .option('-i, --ignore-clean', 'Ignore clean repositories')
+  .parse(process.argv);
 
 var table = new Table({
 	head: ['Clean', 'Repository', 'Branch', 'Last commit by']
 });
 
-var fileList = fs.readdirSync('.');
-// filtering directories
-fileList = fileList.filter(isDirectory);
+var dirList = fs.readdirSync('.').filter(isDirectory);
 
-async.map(fileList, extractGitData, function(err, gitInfos){
+async.map(dirList, extractGitData, function(err, gitInfos){
 	gitInfos.forEach(function(repoInfo){
 		if (repoInfo) {
+			if(options.ignoreClean && repoInfo.isClean){
+				return; // ignore
+			}
 			table.push(format(repoInfo));
 		}
 	});
