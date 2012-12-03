@@ -2,43 +2,10 @@
 
 require('colors');
 var fs = require('fs');
-var exec = require('child_process').exec;
 var async = require('async');
 var Table = require('cli-table');
+var git = require('./git');
 
-var git = {
-	getCurrentBranch : function(dirName, callback){
-		git.status(dirName, function(error, status){
-			var branch;
-			if( ! error ){
-				branch = status.split('\n')[0].substring(3).trim();
-			}
-			callback(error, branch);
-		});
-	},
-	getConfiguredEmail : function(dirName, callback){
-		git.run(dirName, 'config --get user.email', function(error, stdout, stderr){
-			callback(error, stdout.trim());
-		});
-	},
-	_cachedStatus : {},
-	status : function(dirName, callback){
-		if(git._cachedStatus[dirName]){
-			callback(null, git._cachedStatus[dirName]);
-			return;
-		}
-		git.run(dirName, 'status -sb ', function(error, stdout, stderr){
-			if( ! error){
-				git._cachedStatus[dirName] = stdout;
-			}
-			callback(error, stdout);
-		});
-	},
-	run : function(dirName, cmd, callback){
-		var pwd = process.env.PWD + '/';
-		exec('cd ' + pwd + dirName + ' && git ' + cmd, callback);
-	}
-};
 
 
 var table = new Table({
