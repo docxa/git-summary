@@ -1,4 +1,4 @@
-#! /usr/bin/node
+#!/usr/bin/node
 
 require('colors');
 var fs = require('fs');
@@ -26,7 +26,7 @@ async.mapSeries(fileList, extractGitData, function(err, data){
 	});
 	
 	if ( ! table.length){
-		console.log('No git repository found as child of current folder.');
+		console.error('No git repository found as child of current folder.');
 	} else {
 		console.log(table.toString());
 	}
@@ -46,6 +46,8 @@ function extractGitData(dirName, callback){
 					isCleanRepository(dirName, callback);
 				},
 				function(callback){
+					// Adding folder name to the output table here.
+					// That way, we can change it to whatever we want later (git project name, ...)
 					callback(null, dirName);
 				},
 				function(callback){
@@ -66,7 +68,6 @@ function extractGitData(dirName, callback){
 }
 
 function isGitRepository(dirName, callback){
-	var command = 'cd ' + pwd + dirName + ' & git status -s';
 	exec('cd ' + pwd + dirName + ' && git status -sb ', function(error, stdout, stderr){
 		callback( !error );
 	});	
